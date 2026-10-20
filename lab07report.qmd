@@ -1,0 +1,65 @@
+---
+title: "lab07report"
+format: html
+---
+
+## Group information
+
+-   Giovanni Biasiolo: s263492
+
+-   Matilde Gherardi: s263512
+
+-   Sofia Sironi: s263477
+
+-   Pedram Rastgoo: s263747
+
+This is the report of lab06, we correct the coding style as you asked in the review of this week.
+
+## Load data
+
+```{r}
+#| output: false
+library("tidyverse")
+library("broom")
+library("ggrepel")
+```
+
+Load all the library needed.
+
+```{r}
+raw_dir <- "../data/_raw/"
+data_file <- "gravier.RData"
+data_loc <- "https://github.com/ramhiser/datamicroarray/raw/master/data/"
+
+if (!dir.exists(raw_dir)) {
+  dir.create(path = raw_dir)
+}
+
+if (!file.exists(str_c(raw_dir, data_file))) {
+  download.file(
+    url = str_c(data_loc, data_file),
+    destfile = str_c(raw_dir, data_file)
+  )
+}
+
+load(file = str_c(raw_dir, data_file))
+```
+
+Importing the data using the code chunk given. Gravier is a dataset containing breast carcinoma data.
+
+## Clean data
+
+```{r}
+gravier_clean_aug <- gravier |>
+  bind_cols() |>
+  as_tibble() |>
+  mutate(
+    y = case_when(
+      y == "poor" ~ 1,
+      y == "good" ~ 0
+    )
+  ) |>
+  relocate(early_metastasis = y)
+```
+
+We process the raw `gravier` dataset by transforming the variable `y` into a binary numeric variable (1 for poor outcome, 0 for good outcome) and renaming it to `early_metastasis`.
