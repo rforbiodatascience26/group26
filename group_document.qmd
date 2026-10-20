@@ -7,14 +7,24 @@ format: html
 
 Hello!
 
+## New feature
+
+```{r}
+x <- c("hi", "i'm", "Giovanni")
+a <- 5
+```
+
 # Pedram
 
 ## new analysis2
+## new analysis
 
 ```{r}
 a<-'pedram' 
 
 ```
+
+## 
 
 # Sofia
 
