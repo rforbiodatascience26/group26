@@ -11,6 +11,7 @@ Hello!
 
 ```{r}
 x <- c("hi", "i'm", "Giovanni")
+a <- 5
 ```
 
 # Pedram
