@@ -63,3 +63,59 @@ gravier_clean_aug <- gravier |>
 ```
 
 We process the raw `gravier` dataset by transforming the variable `y` into a binary numeric variable (1 for poor outcome, 0 for good outcome) and renaming it to `early_metastasis`.
+
+## Analysis
+
+```{r}
+gravier_clean_aug_long <- gravier_clean_aug |> 
+  pivot_longer(cols=starts_with("g"),
+               names_to="gene",
+               values_to="log2_expr_level")
+```
+
+To work on the dataset, we firstly convert it into a long format dataframe (tidy structure).
+
+```{r}
+gravier_clean_aug_long_nested <- gravier_clean_aug_long |> 
+  group_by(gene) |> #group the rows for each gene 
+  nest() |> #every group is nested into one different dataframe
+  ungroup()
+```
+
+```{r}
+gravier_clean_aug_long_nested <- gravier_clean_aug_long_nested |> 
+  group_by(gene) |>  
+  mutate(model_object= map(.x = data, 
+                   .f = ~lm(formula = log2_expr_level ~ early_metastasis,
+                            data = .x)))   
+```
+
+```{r}
+gravier_clean_aug_long_nested <- gravier_clean_aug_long_nested |>
+  mutate(model_object_tidy = map(.x = model_object,
+                                 .f = ~ tidy(.x, conf.int =TRUE, conf.level = 0.95))
+  )
+```
+
+We then nest the data by gene, so that each gene has its own tibble. After that, we fit a linear regression models to evaluate the association of each gene with early metastasis. Finally, we extract the models using `tidy()`, which organizes the data into a tidy tibble.
+
+```{r}
+gravier_estimates<- gravier_clean_aug_long_nested |> 
+  unnest(model_object_tidy)
+```
+
+```{r}
+gravier_estimates <- gravier_estimates |> 
+  filter(term=="early_metastasis") |> 
+  select(-c(2:4,6,7)) |> 
+  relocate(p.value, .before=estimate) |> 
+  ungroup()
+```
+
+```{r}
+gravier_estimates <- gravier_estimates |> 
+  mutate(q.value=p.adjust(p.value),
+         is_significant=case_when(q.value>=0.05 ~ "no", q.value<0.05 ~ "yes"))
+```
+
+Before visualize the data we create another dataset (`gravier_estimates`), by keeping only the slope term. We then add a column containing the q-value (i.e. the p-value adjusted for multiple tests).
