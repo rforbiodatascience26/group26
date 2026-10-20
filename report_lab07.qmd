@@ -7,7 +7,23 @@ format: html
 library(tidyverse)
 library(broom)
 library(cowplot)
+```
 
+### s263492 did this 
+
+```{r}
 biopsy <- read_csv("https://wilkelab.org/classes/SDS348/data_sets/biopsy.csv")
 ```
 
+```{r}
+pca_fit <- biopsy %>% 
+  select(where(is.numeric)) %>% # retain only numeric columns
+  prcomp(scale = TRUE) # do PCA on scaled data
+```
+
+```{r}
+pca_fit <- biopsy %>% 
+  select(where(is.numeric)) %>% # retain only numeric columns
+  scale() %>% # scale data
+  prcomp() # do PCA
+```
