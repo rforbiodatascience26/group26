@@ -1,0 +1,12 @@
+---
+title: "group_document.qmd"
+format: html
+---
+
+### Giovanni
+
+### Pedram 
+
+### Sofia
+
+### Matilde 
