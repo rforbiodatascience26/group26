@@ -13,7 +13,7 @@ format: html
 
 -   Pedram Rastgoo: s263747
 
-This is the report of lab06, we tried to correct the coding style as you asked in the review of this week.
+Since the main focus of this assignment is learning Git, we decided to reuse the report from Lab 06 and update the code to follow the course code styling guidelines, as suggested in your feedback. We put the report together by uploading different parts through GitHub.
 
 ## Load data
 
