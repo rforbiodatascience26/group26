@@ -13,7 +13,7 @@ format: html
 
 -   Pedram Rastgoo: s263747
 
-This is the report of lab06, we correct the coding style as you asked in the review of this week.
+This is the report of lab06, we tried to correct the coding style as you asked in the review of this week.
 
 ## Load data
 
@@ -27,7 +27,7 @@ library("ggrepel")
 Load all the library needed.
 
 ```{r}
-raw_dir <- "../data/_raw/"
+raw_dir <- "../lab07_git_exercises/data/"
 data_file <- "gravier.RData"
 data_loc <- "https://github.com/ramhiser/datamicroarray/raw/master/data/"
 
@@ -67,33 +67,48 @@ We process the raw `gravier` dataset by transforming the variable `y` into a bin
 ## Analysis
 
 ```{r}
-gravier_clean_aug_long <- gravier_clean_aug |> 
-  pivot_longer(cols=starts_with("g"),
-               names_to="gene",
-               values_to="log2_expr_level")
+gravier_clean_aug_long <- gravier_clean_aug |>
+  pivot_longer(
+    cols = starts_with("g"),
+    names_to = "gene",
+    values_to = "log2_expr_level"
+  )
 ```
 
 To work on the dataset, we firstly convert it into a long format dataframe (tidy structure).
 
 ```{r}
-gravier_clean_aug_long_nested <- gravier_clean_aug_long |> 
-  group_by(gene) |> #group the rows for each gene 
-  nest() |> #every group is nested into one different dataframe
+gravier_clean_aug_long_nested <- gravier_clean_aug_long |>
+  group_by(gene) |> # Group the rows for each gene
+  nest() |> # Nest each group into a separate data frame
   ungroup()
 ```
 
 ```{r}
-gravier_clean_aug_long_nested <- gravier_clean_aug_long_nested |> 
-  group_by(gene) |>  
-  mutate(model_object= map(.x = data, 
-                   .f = ~lm(formula = log2_expr_level ~ early_metastasis,
-                            data = .x)))   
+gravier_clean_aug_long_nested <- gravier_clean_aug_long_nested |>
+  group_by(gene) |>
+  mutate(
+    model_object = map(
+      .x = data,
+      .f = ~ lm(
+        formula = log2_expr_level ~ early_metastasis,
+        data = .x
+      )
+    )
+  )
 ```
 
 ```{r}
 gravier_clean_aug_long_nested <- gravier_clean_aug_long_nested |>
-  mutate(model_object_tidy = map(.x = model_object,
-                                 .f = ~ tidy(.x, conf.int =TRUE, conf.level = 0.95))
+  mutate(
+    model_object_tidy = map(
+      .x = model_object,
+      .f = ~ tidy(
+        .x,
+        conf.int = TRUE,
+        conf.level = 0.95
+      )
+    )
   )
 ```
 
@@ -105,17 +120,72 @@ gravier_estimates<- gravier_clean_aug_long_nested |>
 ```
 
 ```{r}
-gravier_estimates <- gravier_estimates |> 
-  filter(term=="early_metastasis") |> 
-  select(-c(2:4,6,7)) |> 
-  relocate(p.value, .before=estimate) |> 
+gravier_estimates <- gravier_estimates |>
+  filter(term == "early_metastasis") |>
+  select(-c(2:4, 6, 7)) |>
+  relocate(p.value, .before = estimate) |>
   ungroup()
 ```
 
 ```{r}
-gravier_estimates <- gravier_estimates |> 
-  mutate(q.value=p.adjust(p.value),
-         is_significant=case_when(q.value>=0.05 ~ "no", q.value<0.05 ~ "yes"))
+gravier_estimates <- gravier_estimates |>
+  mutate(
+    q.value = p.adjust(p.value),
+    is_significant = case_when(
+      q.value >= 0.05 ~ "no",
+      q.value < 0.05 ~ "yes"
+    )
+  )
 ```
 
 Before visualize the data we create another dataset (`gravier_estimates`), by keeping only the slope term. We then add a column containing the q-value (i.e. the p-value adjusted for multiple tests).
+
+### Visualize
+
+```{r}
+gravier_estimates |>
+  filter(is_significant == "yes") |> # Take only significant rows
+  mutate(gene = fct_reorder(gene, estimate)) |> # Order genes based on estimates
+  ggplot(aes(x = estimate, y = gene)) +
+  geom_point() +
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high),
+                orientation = "y") +
+  geom_vline(xintercept = 0, color = "black") +
+  labs(
+    title = "Genes Associated with Early Metastasis in Small Node-Negative Breast Carcinoma",
+    x = "Estimates (95% CIs)",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 11)
+  )
+```
+
+In the graph, genes with positive coefficients may be associated with a higher probability of early metastasis, whereas genes with negative coefficients may be associated with a lower probability.
+
+```{r}
+gravier_estimates |>
+  mutate(
+    label = case_when(
+      is_significant == "yes" ~ gene,
+      TRUE ~ "")) |>
+  ggplot(aes(
+      x = estimate,
+      y = -log10(p.value),
+      color = is_significant,
+      label = label)) +
+  geom_point(size = 1.5,alpha = 0.5) +
+  geom_text_repel(size = 3, max.overlaps = 40) +
+  geom_hline(yintercept = 0) +
+  labs(
+    title = "Genes Associated with Early Metastasis in Small Node-Negative Breast Carcinoma",
+    subtitle = "Genes highlighted in turquoise were significant after multiple testing correction",
+    x = "Estimates",
+    y = "-log10(p)",
+    color = "Significant") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.3),
+        legend.position = "none")
+```
