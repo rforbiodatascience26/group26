@@ -3,11 +3,15 @@ title: "group_document"
 format: html
 ---
 
-# Giovanni 
+# Giovanni
 
 # Pedram
-a<-'pedram'
-a
+
+```{r}
+a<-'pedram' 
+
+```
+
 # Sofia
 
 # Matilde
