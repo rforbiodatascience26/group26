@@ -7,5 +7,7 @@ format: html
 library(tidyverse)
 library(broom)
 library(cowplot)
+
+biopsy <- read_csv("https://wilkelab.org/classes/SDS348/data_sets/biopsy.csv")
 ```
 
